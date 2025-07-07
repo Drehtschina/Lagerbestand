@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Lagerbestand Bar</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
         th { background-color: #eee; }
@@ -56,13 +56,13 @@
             const barcode = document.getElementById('barcode-input').value.trim();
             const product = products.find(p => p.barcode === barcode);
             if (product) {
-                const amountStr = prompt(\`Aktueller Bestand: \${product.stock}\\nWie viel hinzufügen (+) oder entnehmen (-)?\`);
+                const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
                 const amount = parseInt(amountStr);
                 if (!isNaN(amount)) {
                     product.stock += amount;
                     saveProducts();
                     updateTable();
-                    alert(\`\${product.name}: Neuer Bestand: \${product.stock}\`);
+                    alert(`${product.name}: Neuer Bestand: ${product.stock}`);
                 } else {
                     alert("Ungültige Eingabe!");
                 }
