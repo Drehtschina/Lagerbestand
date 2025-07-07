@@ -37,13 +37,20 @@
         <tbody id="product-table"></tbody>
     </table>
 
-    <!-- Button und Formular für neues Produkt -->
+    <!-- Neues Produkt hinzufügen -->
     <div id="add-product-section" style="margin-top: 30px;">
         <h2>Neues Produkt hinzufügen</h2>
         <input type="text" id="new-name" placeholder="Produktname" required>
         <input type="text" id="new-barcode" placeholder="Barcode" required>
         <input type="number" id="new-stock" placeholder="Bestand" required>
         <button onclick="addNewProduct()">Hinzufügen</button>
+    </div>
+
+    <!-- Export und Import -->
+    <div style="margin-top: 30px;">
+        <h2>Daten exportieren / importieren</h2>
+        <button onclick="exportData()">Daten exportieren (Download)</button>
+        <input type="file" id="import-file" accept=".json" onchange="importData(event)">
     </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
@@ -127,6 +134,38 @@
             document.getElementById('new-name').value = '';
             document.getElementById('new-barcode').value = '';
             document.getElementById('new-stock').value = '';
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(products, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "lagerbestand.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (Array.isArray(importedData)) {
+                            localStorage.setItem('products', JSON.stringify(importedData));
+                            window.location.reload();
+                        } else {
+                            alert("Ungültige Datei!");
+                        }
+                    } catch (err) {
+                        alert("Fehler beim Importieren: " + err);
+                    }
+                };
+                reader.readAsText(file);
+            }
         }
 
         updateTable();
