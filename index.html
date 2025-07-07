@@ -54,12 +54,15 @@
 
         function adjustStockByBarcode() {
             const barcodeInput = document.getElementById('barcode-input');
-            const barcode = barcodeInput.value.trim().toLowerCase();  // Kleinbuchstaben + Trim
+            const barcode = barcodeInput.value.trim();
 
             console.log('Eingegebener Barcode:', barcode);
-            console.log('Produkte im Lager:', products);
+            
+            const product = products.find(p =>
+                typeof p.barcode === 'string' &&
+                p.barcode.trim() === barcode
+            );
 
-            const product = products.find(p => p.barcode.trim().toLowerCase() === barcode);
             if (product) {
                 const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
                 const amount = parseInt(amountStr);
@@ -113,7 +116,8 @@
 
         function addNewProduct() {
             const name = prompt("Produktname:");
-            const barcode = prompt("Barcode:").trim();
+            const barcodeInput = prompt("Barcode:");
+            const barcode = barcodeInput ? barcodeInput.trim() : '';
             const stockStr = prompt("Start-Bestand:");
             const stock = parseInt(stockStr);
             if (name && barcode && !isNaN(stock)) {
@@ -124,6 +128,13 @@
                 alert("Ungültige Eingabe!");
             }
         }
+
+        // Enter-Taste für Barcode-Eingabe aktivieren:
+        document.getElementById('barcode-input').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                adjustStockByBarcode();
+            }
+        });
 
         updateTable();
     </script>
