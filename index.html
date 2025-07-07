@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Bar Lagerbestand</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        button { padding: 5px 10px; margin: 2px; }
+        #scanner-container { margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Bar Lagerbestand</h1>
+    <input type="text" id="barcode-input" placeholder="Barcode scannen oder eingeben" autofocus>
+    <button onclick="adjustStockByBarcode(-1)">-1 (Entnahme)</button>
+    <button onclick="adjustStockByBarcode(1)">+1 (Zugang)</button>
+    
+    <div id="scanner-container">
+        <button onclick="startCameraScanner()">Barcode mit Kamera scannen</button>
+        <video id="video" width="300" height="200" style="display:none;"></video>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Barcode</th>
+                <th>Bestand</th>
+                <th>Ändern</th>
+            </tr>
+        </thead>
+        <tbody id="product-table"></tbody>
+    </table>
+
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <script>
+        const products = JSON.parse(localStorage.getItem('products')) || [
+            { barcode: "123456789012", name: "Cola 0.33L", stock: 10 },
+            { barcode: "987654321098", name: "Chips Paprika", stock: 5 }
+        ];
+
+        function saveProducts() {
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function updateTable() {
+            const table = document.getElementById('product-table');
+            table.innerHTML = '';
+            products.forEach((product, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.barcode}</td>
+                    <td>${product.stock}</td>
+                    <td>
+                        <button onclick="adjustStock(${index}, -1)">-1</button>
+                        <button onclick="adjustStock(${index}, 1)">+1</button>
+                        <input type="number" value="${product.stock}" onchange="setStock(${index}, this.value)" style="width:60px;">
+                    </td>
+                `;
+                table.appendChild(row);
+            });
+        }
+
+        function adjustStock(index, amount) {
+            products[index].stock += amount;
+            saveProducts();
+            updateTable();
+        }
+
+        function setStock(index, value) {
+            products[index].stock = parseInt(value);
+            saveProducts();
+            updateTable();
+        }
+
+        function adjustStockByBarcode(amount) {
+            const barcode = document.getElementById('barcode-input').value.trim();
+            const product = products.find(p => p.barcode === barcode);
+            if (product) {
+                product.stock += amount;
+                saveProducts();
+                updateTable();
+                alert(`${product.name}: Bestand angepasst!`);
+            } else {
+                alert("Produkt nicht gefunden!");
+            }
+            document.getElementById('barcode-input').value = '';
+            document.getElementById('barcode-input').focus();
+        }
+
+        updateTable();
+
+        // Kamera-Scanner (ZXing)
+        let codeReader;
+        async function startCameraScanner() {
+            const videoElement = document.getElementById('video');
+            videoElement.style.display = 'block';
+            codeReader = new ZXing.BrowserBarcodeReader();
+            try {
+                const result = await codeReader.decodeOnceFromVideoDevice(undefined, 'video');
+                document.getElementById('barcode-input').value = result.text;
+                videoElement.style.display = 'none';
+                codeReader.reset();
+                alert("Barcode gescannt: " + result.text);
+            } catch (err) {
+                alert("Fehler beim Scannen: " + err);
+            }
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(() => {
+                console.log('Service Worker registriert!');
+            });
+        }
+    </script>
+    <link rel="manifest" href="manifest.json">
+</body>
+</html>
