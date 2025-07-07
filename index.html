@@ -11,6 +11,7 @@
         th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
         button { padding: 5px 10px; margin: 2px; }
         #scanner-container { margin-top: 20px; text-align: center; }
+        input { margin: 5px; padding: 5px; }
     </style>
 </head>
 <body>
@@ -35,6 +36,15 @@
         </thead>
         <tbody id="product-table"></tbody>
     </table>
+
+    <!-- Button und Formular für neues Produkt -->
+    <div id="add-product-section" style="margin-top: 30px;">
+        <h2>Neues Produkt hinzufügen</h2>
+        <input type="text" id="new-name" placeholder="Produktname" required>
+        <input type="text" id="new-barcode" placeholder="Barcode" required>
+        <input type="number" id="new-stock" placeholder="Bestand" required>
+        <button onclick="addNewProduct()">Hinzufügen</button>
+    </div>
 
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script>
@@ -93,9 +103,34 @@
             document.getElementById('barcode-input').focus();
         }
 
+        function addNewProduct() {
+            const name = document.getElementById('new-name').value.trim();
+            const barcode = document.getElementById('new-barcode').value.trim();
+            const stock = parseInt(document.getElementById('new-stock').value);
+
+            if (!name || !barcode || isNaN(stock)) {
+                alert("Bitte alle Felder korrekt ausfüllen!");
+                return;
+            }
+
+            if (products.some(p => p.barcode === barcode)) {
+                alert("Produkt mit diesem Barcode existiert bereits!");
+                return;
+            }
+
+            products.push({ name, barcode, stock });
+            saveProducts();
+            updateTable();
+
+            alert("Produkt hinzugefügt!");
+            
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-barcode').value = '';
+            document.getElementById('new-stock').value = '';
+        }
+
         updateTable();
 
-        // Kamera-Scanner (ZXing)
         let codeReader;
         async function startCameraScanner() {
             const videoElement = document.getElementById('video');
