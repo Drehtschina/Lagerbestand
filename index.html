@@ -1,97 +1,132 @@
-<script>
-    let products = JSON.parse(localStorage.getItem('products') || '[]');
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Lagerbestand Bar</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background-color: #eee; }
+        input, button { margin: 5px; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Lagerbestand Bar</h1>
 
-    function saveProducts() {
-        localStorage.setItem('products', JSON.stringify(products));
-    }
+    <input type="text" id="barcode-input" placeholder="Barcode scannen oder eingeben" autofocus>
+    <button onclick="adjustStockByBarcode()">Bestand ändern</button>
+    <button onclick="exportData()">Exportieren</button>
+    <input type="file" id="import-file" accept=".json" onchange="importData()">
+    <button onclick="addNewProduct()">Neues Produkt hinzufügen</button>
 
-    function updateTable() {
-        const tbody = document.getElementById('product-table-body');
-        tbody.innerHTML = '';
-        products.forEach(product => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${product.name}</td>
-                <td>${product.barcode}</td>
-                <td>${product.stock}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
+    <table>
+        <thead>
+            <tr>
+                <th>Produktname</th>
+                <th>Barcode</th>
+                <th>Bestand</th>
+            </tr>
+        </thead>
+        <tbody id="product-table-body"></tbody>
+    </table>
 
-    function adjustStockByBarcode() {
-        const barcodeInput = document.getElementById('barcode-input');
-        const barcode = barcodeInput.value.trim().toLowerCase();  // Kleinbuchstaben + Trim
+    <script>
+        let products = JSON.parse(localStorage.getItem('products') || '[]');
 
-        console.log('Eingegebener Barcode:', barcode);
-        console.log('Produkte im Lager:', products);
+        function saveProducts() {
+            localStorage.setItem('products', JSON.stringify(products));
+        }
 
-        const product = products.find(p => p.barcode.trim().toLowerCase() === barcode);
-        if (product) {
-            const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
-            const amount = parseInt(amountStr);
-            if (!isNaN(amount)) {
-                product.stock += amount;
+        function updateTable() {
+            const tbody = document.getElementById('product-table-body');
+            tbody.innerHTML = '';
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.barcode}</td>
+                    <td>${product.stock}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function adjustStockByBarcode() {
+            const barcodeInput = document.getElementById('barcode-input');
+            const barcode = barcodeInput.value.trim().toLowerCase();  // Kleinbuchstaben + Trim
+
+            console.log('Eingegebener Barcode:', barcode);
+            console.log('Produkte im Lager:', products);
+
+            const product = products.find(p => p.barcode.trim().toLowerCase() === barcode);
+            if (product) {
+                const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
+                const amount = parseInt(amountStr);
+                if (!isNaN(amount)) {
+                    product.stock += amount;
+                    saveProducts();
+                    updateTable();
+                    alert(`${product.name}: Neuer Bestand: ${product.stock}`);
+                } else {
+                    alert("Ungültige Eingabe!");
+                }
+            } else {
+                alert("Produkt nicht gefunden!");
+            }
+
+            barcodeInput.value = '';
+            barcodeInput.focus();
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "lagerbestand.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedProducts = JSON.parse(event.target.result);
+                    if (Array.isArray(importedProducts)) {
+                        products = importedProducts;
+                        saveProducts();
+                        updateTable();
+                        alert("Daten erfolgreich importiert!");
+                    } else {
+                        alert("Ungültiges Format!");
+                    }
+                } catch (e) {
+                    alert("Fehler beim Importieren der Datei.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function addNewProduct() {
+            const name = prompt("Produktname:");
+            const barcode = prompt("Barcode:").trim();
+            const stockStr = prompt("Start-Bestand:");
+            const stock = parseInt(stockStr);
+            if (name && barcode && !isNaN(stock)) {
+                products.push({ name, barcode, stock });
                 saveProducts();
                 updateTable();
-                alert(`${product.name}: Neuer Bestand: ${product.stock}`);
             } else {
                 alert("Ungültige Eingabe!");
             }
-        } else {
-            alert("Produkt nicht gefunden!");
         }
 
-        barcodeInput.value = '';
-        barcodeInput.focus();
-    }
-
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "lagerbestand.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function importData() {
-        const fileInput = document.getElementById('import-file');
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const importedProducts = JSON.parse(event.target.result);
-                if (Array.isArray(importedProducts)) {
-                    products = importedProducts;
-                    saveProducts();
-                    updateTable();
-                    alert("Daten erfolgreich importiert!");
-                } else {
-                    alert("Ungültiges Format!");
-                }
-            } catch (e) {
-                alert("Fehler beim Importieren der Datei.");
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    function addNewProduct() {
-        const name = prompt("Produktname:");
-        const barcode = prompt("Barcode:").trim();
-        const stockStr = prompt("Start-Bestand:");
-        const stock = parseInt(stockStr);
-        if (name && barcode && !isNaN(stock)) {
-            products.push({ name, barcode, stock });
-            saveProducts();
-            updateTable();
-        } else {
-            alert("Ungültige Eingabe!");
-        }
-    }
-
-    updateTable();
-</script>
+        updateTable();
+    </script>
+</body>
+</html>
 
