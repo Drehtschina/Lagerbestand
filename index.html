@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,9 +45,9 @@
             products.forEach(product => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>${product.barcode}</td>
-                    <td>${product.stock}</td>
+                    <td>\${product.name}</td>
+                    <td>\${product.barcode}</td>
+                    <td>\${product.stock}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -59,18 +60,17 @@
             console.log('Eingegebener Barcode:', barcode);
             
             const product = products.find(p =>
-                typeof p.barcode === 'string' &&
-                p.barcode.trim() === barcode
+                String(p.barcode).trim() === barcode
             );
 
             if (product) {
-                const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
+                const amountStr = prompt(`Aktueller Bestand: \${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
                 const amount = parseInt(amountStr);
                 if (!isNaN(amount)) {
                     product.stock += amount;
                     saveProducts();
                     updateTable();
-                    alert(`${product.name}: Neuer Bestand: ${product.stock}`);
+                    alert(`\${product.name}: Neuer Bestand: \${product.stock}`);
                 } else {
                     alert("Ungültige Eingabe!");
                 }
@@ -129,7 +129,6 @@
             }
         }
 
-        // Enter-Taste für Barcode-Eingabe aktivieren:
         document.getElementById('barcode-input').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 adjustStockByBarcode();
@@ -140,4 +139,3 @@
     </script>
 </body>
 </html>
-
