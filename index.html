@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -9,6 +10,8 @@
         th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
         th { background-color: #eee; }
         input, button { margin: 5px; padding: 8px; }
+        #scanner-container { margin-top: 20px; display: none; }
+        #einkaufsliste { margin-top: 40px; }
     </style>
 </head>
 <body>
@@ -19,6 +22,12 @@
     <button onclick="exportData()">Exportieren</button>
     <input type="file" id="import-file" accept=".json" onchange="importData()">
     <button onclick="addNewProduct()">Neues Produkt hinzufügen</button>
+    <button onclick="startScanner()">Barcode scannen (Kamera)</button>
+
+    <div id="scanner-container">
+        <video id="scanner-preview" width="100%"></video>
+        <button onclick="stopScanner()">Scanner stoppen</button>
+    </div>
 
     <table>
         <thead>
@@ -31,6 +40,20 @@
         <tbody id="product-table-body"></tbody>
     </table>
 
+    <div id="einkaufsliste" style="display:none;">
+        <h2>Einkaufsliste (Bestand 0)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produktname</th>
+                    <th>Barcode</th>
+                </tr>
+            </thead>
+            <tbody id="einkaufsliste-body"></tbody>
+        </table>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script>
         let products = JSON.parse(localStorage.getItem('products') || '[]');
 
@@ -44,25 +67,26 @@
             products.forEach(product => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>${product.barcode}</td>
-                    <td>${product.stock}</td>
+                    <td>\${product.name}</td>
+                    <td>\${product.barcode}</td>
+                    <td>\${product.stock}</td>
                 `;
                 tbody.appendChild(row);
             });
+            updateEinkaufsliste();
         }
 
         function adjustStockByBarcode() {
             const barcode = document.getElementById('barcode-input').value.trim();
-            const product = products.find(p => String(p.barcode) === String(barcode));
+            const product = products.find(p => p.barcode === barcode);
             if (product) {
-                const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
+                const amountStr = prompt(`Aktueller Bestand: \${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
                 const amount = parseInt(amountStr);
                 if (!isNaN(amount)) {
                     product.stock += amount;
                     saveProducts();
                     updateTable();
-                    alert(`${product.name}: Neuer Bestand: ${product.stock}`);
+                    alert(`\${product.name}: Neuer Bestand: \${product.stock}`);
                 } else {
                     alert("Ungültige Eingabe!");
                 }
@@ -119,15 +143,61 @@
             }
         }
 
-        // Barcode-Eingabe per Enter-Taste auslösen
-        document.getElementById('barcode-input').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                adjustStockByBarcode();
+        function updateEinkaufsliste() {
+            const einkaufsliste = products.filter(p => p.stock === 0);
+            const einkaufslisteBody = document.getElementById('einkaufsliste-body');
+            const einkaufslisteDiv = document.getElementById('einkaufsliste');
+            einkaufslisteBody.innerHTML = '';
+            if (einkaufsliste.length > 0) {
+                einkaufsliste.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>\${product.name}</td><td>\${product.barcode}</td>`;
+                    einkaufslisteBody.appendChild(row);
+                });
+                einkaufslisteDiv.style.display = 'block';
+            } else {
+                einkaufslisteDiv.style.display = 'none';
             }
-        });
+        }
+
+        // Barcode Scanner
+        function startScanner() {
+            const scannerContainer = document.getElementById('scanner-container');
+            scannerContainer.style.display = 'block';
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#scanner-preview'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader", "code_128_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    alert("Scanner konnte nicht gestartet werden.");
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(data => {
+                const code = data.codeResult.code;
+                document.getElementById('barcode-input').value = code;
+                stopScanner();
+            });
+        }
+
+        function stopScanner() {
+            Quagga.stop();
+            document.getElementById('scanner-container').style.display = 'none';
+        }
 
         updateTable();
     </script>
 </body>
 </html>
-
