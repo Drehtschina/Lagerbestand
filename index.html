@@ -9,48 +9,33 @@
             padding: 20px;
             background-color: #f9f9f9;
         }
-
         table {
             border-collapse: collapse;
             width: 100%;
             margin-top: 20px;
         }
-
         th, td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: center;
         }
-
         th {
             background-color: #eee;
         }
-
         input, button {
             margin: 5px;
             padding: 8px;
         }
-
         #scanner-preview video,
         #scanner-preview canvas,
         #scanner-preview {
             width: 100% !important;
             max-height: 400px;
-            height: auto !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
             position: relative !important;
             z-index: 9999;
-        }
-
-        #scanner-container {
-            margin-top: 20px;
-        }
-
-        #scan-result {
-            margin-top: 10px;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -75,12 +60,6 @@
         <tbody id="product-table-body"></tbody>
     </table>
 
-    <div id="scanner-container">
-        <div id="scanner-preview"></div>
-        <button onclick="stopScanner()">Scanner stoppen</button>
-        <div id="scan-result"></div>
-    </div>
-
     <h2>Einkaufsliste (Bestand = 0)</h2>
     <table>
         <thead>
@@ -91,6 +70,9 @@
         </thead>
         <tbody id="shopping-list-body"></tbody>
     </table>
+
+    <div id="scanner-preview"></div>
+    <button onclick="stopScanner()">Scanner stoppen</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script>
@@ -113,7 +95,6 @@
                 tbody.appendChild(row);
             });
 
-            // Einkaufsliste (Bestand 0)
             const shoppingTbody = document.getElementById('shopping-list-body');
             shoppingTbody.innerHTML = '';
             products.filter(p => p.stock === 0).forEach(product => {
@@ -208,7 +189,7 @@
                     type: "LiveStream",
                     target: document.querySelector('#scanner-preview'),
                     constraints: {
-                        facingMode: "environment" // Rückkamera
+                        facingMode: "environment"
                     }
                 },
                 decoder: {
@@ -228,8 +209,7 @@
             Quagga.onDetected(function (result) {
                 const code = result.codeResult.code;
                 document.getElementById('barcode-input').value = code;
-                document.getElementById('scan-result').innerText = `Gescannt: ${code}`;
-                stopScanner(); // Automatisch nach Scan stoppen
+                stopScanner();
                 adjustStockByBarcode();
             });
         }
@@ -240,6 +220,13 @@
                 scannerRunning = false;
             }
         }
+
+        // ENTER-Scan-Funktion für kabelgebundene Scanner und Tastatureingabe
+        document.getElementById('barcode-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                adjustStockByBarcode();
+            }
+        });
 
         updateTable();
     </script>
