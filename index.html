@@ -128,7 +128,7 @@
 
         function adjustStockByBarcode() {
             const barcode = document.getElementById('barcode-input').value.trim();
-            const product = products.find(p => p.barcode === barcode);
+            const product = products.find(p => p.barcode.trim() === barcode);
             if (product) {
                 const amountStr = prompt(`Aktueller Bestand: ${product.stock}\nWie viel hinzufügen (+) oder entnehmen (-)?`);
                 const amount = parseInt(amountStr);
@@ -141,7 +141,7 @@
                     alert("Ungültige Eingabe!");
                 }
             } else {
-                alert("Produkt nicht gefunden!");
+                alert(`Produkt nicht gefunden!\n(Barcode: ${barcode})`);
             }
             document.getElementById('barcode-input').value = '';
             document.getElementById('barcode-input').focus();
@@ -185,7 +185,11 @@
             const stockStr = prompt("Start-Bestand:");
             const stock = parseInt(stockStr);
             if (name && barcode && !isNaN(stock)) {
-                products.push({ name, barcode, stock });
+                products.push({
+                    name: name.trim(),
+                    barcode: barcode.trim(),
+                    stock
+                });
                 saveProducts();
                 updateTable();
             } else {
